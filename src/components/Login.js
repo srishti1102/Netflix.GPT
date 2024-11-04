@@ -3,12 +3,17 @@ import Header from './Header';
 import { checkValidData } from '../utils/validate';
 import { createUserWithEmailAndPassword ,signInWithEmailAndPassword} from "firebase/auth";
 import { auth } from '../utils/firebase';
+import { updateProfile } from 'firebase/auth';
+import { useDispatch } from 'react-redux';
+import { addUser } from '../utils/userSlice';
 
 
 const Login = () => {
     const[isSignInForm ,setIsSignInForm]=useState(true);
     const [errorMessage, setErrorMessage]=useState(null);
+    const dispatch =useDispatch();
 
+    const name =useRef(null);
     const email=useRef(null);
     const password=useRef(null);
 
@@ -16,21 +21,37 @@ const Login = () => {
         const message =checkValidData(email.current.value, password.current.value);
         setErrorMessage(message);
         if(message)return;
-       //Sign in Sign Up logic
+       
        if(!isSignInForm){
         //Sign Up Logic
-        createUserWithEmailAndPassword(auth,email.current.value, password.current.value)
+        createUserWithEmailAndPassword(auth,
+            email.current.value, 
+            password.current.value
+        )
         .then((userCredential) => {
-        // Signed up 
         const user = userCredential.user;
-        console.log(user)
-        // ...
+        updateProfile(user,{
+            displayName: name.current.value, 
+            photoURL: " https://media.licdn.com/dms/image/v2/D5603AQEZFC5PcW70NA/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1718242537400?e=1735171200&v=beta&t=JANXOnZhTuXHSqId0n5qbR5j5GNPAmyTlFTdkuM6TWs"
+          })
+          .then(() => {
+             const {uid, email, displayName, photoURL}= auth.currentUser;
+                dispatch
+                (
+                addUser({uid:uid, 
+                    email:email,
+                     displayName:displayName,
+                     photoURL:photoURL})
+                    );
+             })
+          .catch((error) => {
+            setErrorMessage(error.message);
+          });
             })
         .catch((error) => {
          const errorCode = error.code;
          const errorMessage = error.message;
          setErrorMessage(errorCode+" "+errorMessage);
-          // ..
      });
              
        }else{
